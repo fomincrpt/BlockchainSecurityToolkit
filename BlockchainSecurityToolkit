@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract BlockchainSecurityToolkit is Ownable {
+    bool private emergencyStop;
+    mapping(address => bool) private authorizedContracts;
+    mapping(address => bool) private whitelistedAccounts;
+
+    // Events
+    event EmergencyStopSet(bool enabled);
+    event ContractAuthorized(address indexed contractAddress);
+    event ContractRevoked(address indexed contractAddress);
+    event AccountWhitelisted(address indexed account);
+    event AccountBlacklisted(address indexed account);
+
+    // Modifier to check if emergency stop is not active
+    modifier notEmergencyStopped() {
+        require(!emergencyStop, "Contract operations are currently stopped");
+        _;
+    }
+
+    // Set emergency stop
+    function setEmergencyStop(bool _emergencyStop) external onlyOwner {
+        emergencyStop = _emergencyStop;
+        emit EmergencyStopSet(_emergencyStop);
+    }
+
+    // Authorize a contract to interact with this toolkit
+    function authorizeContract(address contractAddress) external onlyOwner notEmergencyStopped {
+        authorizedContracts[contractAddress] = true;
+        emit ContractAuthorized(contractAddress);
+    }
+
+    // Revoke authorization from a contract
+    function revokeContract(address contractAddress) external onlyOwner notEmergencyStopped {
+        authorizedContracts[contractAddress] = false;
+        emit ContractRevoked(contractAddress);
+    }
+
+    // Check if a contract is authorized
+    function isContractAuthorized(address contractAddress) external view returns (bool) {
+        return authorizedContracts[contractAddress];
+    }
+
+    // Whitelist an account
+    function whitelistAccount(address account) external onlyOwner notEmergencyStopped {
+        whitelistedAccounts[account] = true;
+        emit AccountWhitelisted(account);
+    }
+
+    // Blacklist an account
+    function blacklistAccount(address account) external onlyOwner notEmergencyStopped {
+        whitelistedAccounts[account] = false;
+        emit AccountBlacklisted(account);
+    }
+
+    // Check if an account is whitelisted
+    function isAccountWhitelisted(address account) external view returns (bool) {
+        return whitelistedAccounts[account];
+    }
+}
